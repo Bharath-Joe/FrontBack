@@ -47,9 +47,7 @@ users = {
 }
 
 
-@app.route('/users', methods=['GET', 'POST', 'DELETE'])
-# GET: retrives and shows the information
-# POST: adds the information
+@app.route('/users', methods=['GET', 'POST'])
 def get_users():
     if request.method == 'GET':
         search_username = request.args.get('name')
@@ -73,25 +71,23 @@ def get_users():
         id = generateID()
         userWithID['id'] = id
         users['users_list'].append(userWithID)
-        resp = jsonify(success=True)
-        resp.status_code = 201 #optionally, you can always set a response code.
-        # 200 is the default code for a normal response
-        return resp
-    elif request.method == 'DELETE':
-        userToremove = request.get_json()
-        users['users_list'].remove(userToremove)
-        resp = jsonify(success=True)
+        resp = jsonify(users), 201
         return resp
 
 
-@app.route('/users/<id>')
+@app.route('/users/<id>', methods = ['DELETE'])
 def get_user(id):
     if id:
         for user in users['users_list']:
             if user['id'] == id:
-                return user
-        return ({})
+                if request.method == 'DELETE':
+                    users['users_list'].remove(user)
+                    resp = jsonify({}), 204
+                    return resp
+        resp = jsonify({"error": "User not found"}), 404
+        return resp
     return users
+
 
 def generateID():
     id = ""
@@ -102,4 +98,3 @@ def generateID():
         num = randrange(10)
         id = id + str(num)
     return id
-    

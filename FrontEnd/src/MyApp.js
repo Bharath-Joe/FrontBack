@@ -13,8 +13,10 @@ function MyApp() {
   }, []);
   function updateList(person) { 
     makePostCall(person).then( result => {
-    if (result)
-       setCharacters([...characters, person] );
+      console.log(result)
+      if(result){
+        setCharacters(result.users_list);
+      }
     });
  }
   return (
@@ -25,12 +27,18 @@ function MyApp() {
   )
 
 
-  function removeOneCharacter(index) {
-    const updated = characters.filter((character, i) => {
-      return i !== index
-    });
-    setCharacters(updated);
+  async function removeOneCharacter(index) {
+    //.then is to fetch the updated list and set the new list as result
+    makeDeleteCall(characters[index]['id']).then(result => {
+    if (result.status === 204){
+      fetchAll().then(result => {
+        if (result)
+          setCharacters(result);
+        });
+      }
+    })
   }
+
 
   async function fetchAll() {
     try {
@@ -43,6 +51,19 @@ function MyApp() {
       return false;
     }
   }
+
+
+  async function makeDeleteCall(id) {
+    try {
+      const response = await axios.delete("http://localhost:5000/users/" + id);
+      return response;
+   }
+   catch (error) {
+      console.log(error);
+      return false;
+   }
+  }
+
 
   async function makePostCall(person){
     try {
