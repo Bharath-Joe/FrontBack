@@ -13,7 +13,6 @@ function MyApp() {
   }, []);
   function updateList(person) { 
     makePostCall(person).then( result => {
-      console.log(result)
       if(result){
         setCharacters(result.users_list);
       }
