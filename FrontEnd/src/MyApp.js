@@ -13,8 +13,10 @@ function MyApp() {
   }, []);
   function updateList(person) { 
     makePostCall(person).then( result => {
-      if(result){
-        setCharacters(result.users_list);
+      console.log(result.status);
+      if(result.status === 201){
+        console.log(result.data)
+        setCharacters([...characters, result.data]);
       }
     });
  }
@@ -28,7 +30,7 @@ function MyApp() {
 
   async function removeOneCharacter(index) {
     //.then is to fetch the updated list and set the new list as result
-    makeDeleteCall(characters[index]['id']).then(result => {
+    makeDeleteCall(characters[index]['_id']).then(result => {
     if (result.status === 204){
       fetchAll().then(result => {
         if (result)
@@ -67,7 +69,7 @@ function MyApp() {
   async function makePostCall(person){
     try {
        const response = await axios.post('http://localhost:5000/users', person);
-       return response.data;
+       return response;
     }
     catch (error) {
        console.log(error);

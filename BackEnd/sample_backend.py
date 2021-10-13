@@ -5,6 +5,7 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 from flask_cors import CORS
+from model_mongodb import User
 
 
 app = Flask(__name__)
@@ -16,34 +17,7 @@ def hello_world():
 
 
 users = {
-    'users_list':
-    [
-        {
-            'id': 'xyz789',
-            'name': 'Charlie',
-            'job': 'Janitor',
-        },
-        {
-            'id': 'abc123',
-            'name': 'Mac',
-            'job': 'Bouncer',
-        },
-        {
-            'id': 'ppp222',
-            'name': 'Mac',
-            'job': 'Professor',
-        },
-        {
-            'id': 'yat999',
-            'name': 'Dee',
-            'job': 'Aspring actress',
-        },
-        {
-            'id': 'zap555',
-            'name': 'Dennis',
-            'job': 'Bartender',
-        }
-    ]
+    'users_list':[]
 }
 
 
@@ -53,50 +27,53 @@ def get_users():
         search_username = request.args.get('name')
         search_job = request.args.get('job')
         if search_username and search_job:
-            subdict = {'users_list': []}
-            for user in users['users_list']:
-                if user['name'] == search_username and user['job'] == search_job:
-                    subdict['users_list'].append(user)
-            return subdict
+            users = User().find_by_name_job(search_username, search_job)
         elif search_username:
-            subdict = {'users_list': []}
-            for user in users['users_list']:
-                if user['name'] == search_username:
-                    subdict['users_list'].append(user)
-            return subdict
-        return users
+            users = User().find_by_name(search_username)
+        elif search_job:
+            users = User().find_by_job(search_job)
+        else:
+            users = User().find_all()
+        return {"users_list": users}
     elif request.method == 'POST':
         userToAdd = request.get_json()
-        userWithID = userToAdd
-        id = generateID()
-        userWithID['id'] = id
-        users['users_list'].append(userWithID)
-        resp = jsonify(users), 201
+        # userWithID = userToAdd
+        # id = generateID()
+        # userWithID['id'] = id
+        # users['users_list'].append(userWithID)
+        newUser = User(userToAdd)
+        newUser.save()
+        resp = jsonify(newUser), 201
+        print(newUser)
+        print(resp)
         return resp
 
 
-@app.route('/users/<id>', methods = ['GET', 'DELETE'])
+@app.route('/users/<id>', methods=['GET', 'DELETE'])
 def get_user(id):
-    if id:
-        for user in users['users_list']:
-            if user['id'] == id:
-                if request.method == 'GET':
-                   return user
-                elif request.method == 'DELETE':
-                    users['users_list'].remove(user)
-                    resp = jsonify({}), 204
-                    return resp
-        resp = jsonify({"error": "User not found"}), 404
-        return resp
-    return users
+    if request.method == 'GET':
+       # update for db access
+        user = User({"_id": id})
+        if user.reload():
+            return user
+        else:
+            return jsonify({"error": "User not found"}), 404
+    elif request.method == 'DELETE':
+        user = User({"_id": id})
+        if user.remove():
+            # 204 is the default code for a normal response, no other input returned
+            resp = jsonify({}), 204
+            return resp
+        else:
+            return jsonify({"error": "User not found"}), 404
 
 
-def generateID():
-    id = ""
-    for i in range(3):
-        char = random.choice(string.ascii_letters)
-        id = id + char.lower()
-    for i in range(3):
-        num = randrange(10)
-        id = id + str(num)
-    return id
+# def generateID():
+#     id = ""
+#     for i in range(3):
+#         char = random.choice(string.ascii_letters)
+#         id = id + char.lower()
+#     for i in range(3):
+#         num = randrange(10)
+#         id = id + str(num)
+#     return id
